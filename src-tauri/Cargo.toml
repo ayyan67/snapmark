@@ -2,7 +2,7 @@
 name = "snapmark"
 version = "0.1.0"
 description = "Lightweight Mac Annotation Tool"
-authors = ["you"]
+authors = ["Ayyan Qamer"]
 edition = "2021"
 
 [lib]
