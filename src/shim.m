@@ -653,24 +653,31 @@ static void sm_text_edit_finish(BOOL commit) {
     if (tool == kToolSelect && event.clickCount == 2 && sm_text_edit_begin(p, NO)) {
         return;
     }
-    sm_on_mouse_down(g_state, p.x, p.y, sm_modifiers_from_event(event));
+    const SmModifiers modifiers = sm_modifiers_from_event(event);
+    sm_on_mouse_down(g_state, p.x, p.y, &modifiers);
 }
 
 - (void)mouseDragged:(NSEvent *)event {
     if (g_state == NULL || g_text_editor != nil) return;
     const NSPoint p = [self convertPoint:event.locationInWindow fromView:nil];
-    sm_on_mouse_drag(g_state, p.x, p.y, sm_modifiers_from_event(event));
+    const SmModifiers modifiers = sm_modifiers_from_event(event);
+    sm_on_mouse_drag(g_state, p.x, p.y, &modifiers);
 }
 
 - (void)mouseUp:(NSEvent *)event {
     if (g_state == NULL || g_text_editor != nil) return;
     const NSPoint p = [self convertPoint:event.locationInWindow fromView:nil];
-    sm_on_mouse_up(g_state, p.x, p.y, sm_modifiers_from_event(event));
+    const SmModifiers modifiers = sm_modifiers_from_event(event);
+    sm_on_mouse_up(g_state, p.x, p.y, &modifiers);
 }
 
 - (void)keyDown:(NSEvent *)event {
-    if (g_state == NULL || g_text_editor != nil ||
-        !sm_on_key_down(g_state, (uint16_t)event.keyCode, sm_modifiers_from_event(event))) {
+    if (g_state == NULL || g_text_editor != nil) {
+        [super keyDown:event];
+        return;
+    }
+    const SmModifiers modifiers = sm_modifiers_from_event(event);
+    if (!sm_on_key_down(g_state, (uint16_t)event.keyCode, &modifiers)) {
         [super keyDown:event];
     }
 }
@@ -772,20 +779,29 @@ static void sm_text_edit_finish(BOOL commit) {
         sm_setup_global_hotkey();
     });
 
-    // Acceptance check used by scripts/selftest.sh: draw an arrow on the pasted
+    // Acceptance check used by scripts/selftest.sh: draw on the pasted
     // image, copy the result to the clipboard, and quit.
     if (getenv("SNAPMARK_SELFTEST") != NULL) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [g_canvas_view displayIfNeeded];
             const NSRect b = g_canvas_view.bounds;
             const SmModifiers none = {0};
-            sm_on_mouse_down(g_state, NSMidX(b) - 100, NSMidY(b) - 60, none);
-            sm_on_mouse_drag(g_state, NSMidX(b), NSMidY(b), none);
-            sm_on_mouse_up(g_state, NSMidX(b), NSMidY(b), none);
-            sm_set_tool(g_state, 5);
-            sm_on_mouse_down(g_state, NSMidX(b) + 100, NSMidY(b) + 60, none);
-            sm_on_mouse_drag(g_state, NSMidX(b) + 10, NSMidY(b) + 10, none);
-            sm_on_mouse_up(g_state, NSMidX(b) + 10, NSMidY(b) + 10, none);
+            const SmModifiers shift = {.shift = 1};
+            const double x0 = NSMidX(b) - 100, y0 = NSMidY(b) - 60;
+            // Every drawing tool (pen, ellipse, rect, arrow, line), plain and with
+            // Shift, each with a long drag so the pen's point buffer has to grow.
+            for (uint32_t tool = 2; tool <= 6; tool++) {
+                for (int with_shift = 0; with_shift <= 1; with_shift++) {
+                    const SmModifiers *mods = with_shift ? &shift : &none;
+                    const double ox = (tool - 2) * 30.0, oy = with_shift * 30.0;
+                    sm_set_tool(g_state, tool);
+                    sm_on_mouse_down(g_state, x0 + ox, y0 + oy, mods);
+                    for (int i = 1; i <= 200; i++) {
+                        sm_on_mouse_drag(g_state, x0 + ox + i * 0.5, y0 + oy + i * 0.3, mods);
+                    }
+                    sm_on_mouse_up(g_state, x0 + ox + 100, y0 + oy + 60, mods);
+                }
+            }
             const char *label = "SnapMark self-test";
             sm_text_commit(g_state, 0, NSMidX(b) + 20, NSMidY(b) + 70, (const uint8_t *)label, strlen(label));
             const bool ok = sm_copy_to_clipboard(g_state);

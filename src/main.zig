@@ -29,20 +29,24 @@ pub export fn sm_app_destroy(state: ?*AppState) void {
 
 // ---- Input -------------------------------------------------------------------
 
-pub export fn sm_on_mouse_down(state: ?*AppState, x: f64, y: f64, modifiers: c.SmModifiers) void {
+fn readModifiers(modifiers: ?*const c.SmModifiers) c.SmModifiers {
+    return if (modifiers) |m| m.* else std.mem.zeroes(c.SmModifiers);
+}
+
+pub export fn sm_on_mouse_down(state: ?*AppState, x: f64, y: f64, modifiers: ?*const c.SmModifiers) void {
     _ = modifiers;
     const s = state orelse return;
     s.beginDrawing(x, y) catch return;
     c.sm_platform_invalidate();
 }
 
-pub export fn sm_on_mouse_drag(state: ?*AppState, x: f64, y: f64, modifiers: c.SmModifiers) void {
+pub export fn sm_on_mouse_drag(state: ?*AppState, x: f64, y: f64, modifiers: ?*const c.SmModifiers) void {
     const s = state orelse return;
-    s.appendDrawingPoint(x, y, modifiers.shift != 0) catch return;
+    s.appendDrawingPoint(x, y, readModifiers(modifiers).shift != 0) catch return;
     c.sm_platform_invalidate();
 }
 
-pub export fn sm_on_mouse_up(state: ?*AppState, x: f64, y: f64, modifiers: c.SmModifiers) void {
+pub export fn sm_on_mouse_up(state: ?*AppState, x: f64, y: f64, modifiers: ?*const c.SmModifiers) void {
     _ = x;
     _ = y;
     _ = modifiers;
@@ -51,8 +55,9 @@ pub export fn sm_on_mouse_up(state: ?*AppState, x: f64, y: f64, modifiers: c.SmM
     c.sm_platform_invalidate();
 }
 
-pub export fn sm_on_key_down(state: ?*AppState, key_code: u16, modifiers: c.SmModifiers) bool {
+pub export fn sm_on_key_down(state: ?*AppState, key_code: u16, modifiers_ptr: ?*const c.SmModifiers) bool {
     const s = state orelse return false;
+    const modifiers = readModifiers(modifiers_ptr);
 
     if (modifiers.command != 0 or modifiers.control != 0) {
         switch (key_code) {

@@ -383,7 +383,7 @@ pub const AppState = struct {
         }
         if (!self.is_drawing) return;
 
-        const temp = &(self.temp_shape orelse return);
+        const temp = if (self.temp_shape) |*shape| shape else return;
         switch (temp.*) {
             .freehand => |*freehand| {
                 if (freehand.points.items.len > 0) {

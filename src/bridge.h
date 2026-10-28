@@ -71,11 +71,14 @@ typedef struct SmTextEdit {
 SmAppState *sm_app_create(void);
 void sm_app_destroy(SmAppState *state);
 
-void sm_on_mouse_down(SmAppState *state, double x, double y, SmModifiers modifiers);
-void sm_on_mouse_drag(SmAppState *state, double x, double y, SmModifiers modifiers);
-void sm_on_mouse_up(SmAppState *state, double x, double y, SmModifiers modifiers);
+// Modifiers are passed by pointer (NULL means none): Zig 0.15.2 mis-lowers this
+// small struct when it is passed by value on arm64, and the optimizer then
+// treats branches on its fields as unreachable.
+void sm_on_mouse_down(SmAppState *state, double x, double y, const SmModifiers *modifiers);
+void sm_on_mouse_drag(SmAppState *state, double x, double y, const SmModifiers *modifiers);
+void sm_on_mouse_up(SmAppState *state, double x, double y, const SmModifiers *modifiers);
 // Returns true when the key was consumed.
-bool sm_on_key_down(SmAppState *state, uint16_t key_code, SmModifiers modifiers);
+bool sm_on_key_down(SmAppState *state, uint16_t key_code, const SmModifiers *modifiers);
 
 // Draws the canvas into a flipped (y down) context of width x height points.
 // scale is the backing scale factor of the window.

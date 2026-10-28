@@ -6,6 +6,17 @@ Draw arrows, boxes, ellipses, lines, freehand strokes, or text on it, press `Cmd
 and paste the result into Slack, Discord, an issue, or a message. Nothing is written
 to disk.
 
+<p align="center">
+  <img src="docs/screenshot.png" width="760" alt="SnapMark window with a screenshot of a signup form, annotated with an underline, an ellipse around an error message, a box and arrow pointing at a clipped button, and the label 'Button is cut off'">
+</p>
+
+What `Cmd+C` puts on the clipboard: the screenshot at its original size with the
+annotations drawn in, and nothing around it.
+
+<p align="center">
+  <img src="docs/result.png" width="620" alt="The exported annotated image">
+</p>
+
 The app is Zig for the app logic and Core Graphics rendering, plus a single
 Objective-C file for AppKit. There is no web view and no runtime besides the system
 frameworks. The release executable is about 140 KB.
@@ -96,6 +107,7 @@ src/shim.m        AppKit: window, toolbar, canvas view, menus, pasteboard, statu
                   Carbon global hotkey, inline text editor, Core Text drawing
 src/bridge.h      the C interface between the two
 scripts/          build, bundle, install, DMG, self-test, benchmark, icon
+docs/             README screenshots
 bench/            launch-time and memory harness
 ```
 
